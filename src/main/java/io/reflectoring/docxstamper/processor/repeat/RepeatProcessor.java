@@ -45,6 +45,7 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
         for (TableRowCoordinates rCoords : tableRowsToRepeat.keySet()) {
             List<Object> expressionContexts = tableRowsToRepeat.get(rCoords);
             int index = rCoords.getIndex();
+            List<Object> parentTableContent = rCoords.getParentTableCoordinates().getTable().getContent();
             for (final Object expressionContext : expressionContexts) {
                 Object context = getContext(expressionContext);
                 Tr rowClone = XmlUtils.deepCopy(rCoords.getRow());
@@ -55,9 +56,9 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
                     }
                 };
                 walker.walk();
-                rCoords.getParentTableCoordinates().getTable().getContent().add(++index, rowClone);
+                parentTableContent.add(Math.min(parentTableContent.size(), ++index), rowClone);
             }
-            rCoords.getParentTableCoordinates().getTable().getContent().remove(rCoords.getRow());
+            parentTableContent.remove(rCoords.getRow());
         }
     }
 

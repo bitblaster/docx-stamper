@@ -5,7 +5,8 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.junit.Assert;
 import org.junit.Test;
 import io.reflectoring.docxstamper.api.coordinates.TableRowCoordinates;
-import io.reflectoring.docxstamper.context.NameContext;
+import io.reflectoring.docxstamper.context.Character;
+import io.reflectoring.docxstamper.context.CharactersContext;
 import io.reflectoring.docxstamper.util.walk.BaseCoordinatesWalker;
 import io.reflectoring.docxstamper.util.walk.CoordinatesWalker;
 
@@ -18,8 +19,9 @@ public class ConditionalDisplayOfTableRowsTest extends AbstractDocx4jTest {
 
     @Test
     public void test() throws Docx4JException, IOException {
-        NameContext context = new NameContext();
-        context.setName("Homer");
+        CharactersContext context = new CharactersContext();
+        context.getCharacters().add(new Character("Homer Simpson", "Dan Castellaneta"));
+        context.getCharacters().add(new Character("Marge Simpson", "Julie Kavner"));
         InputStream template = getClass().getResourceAsStream("ConditionalDisplayOfTableRowsTest.docx");
         WordprocessingMLPackage document = stampAndLoad(template, context);
 
@@ -32,7 +34,7 @@ public class ConditionalDisplayOfTableRowsTest extends AbstractDocx4jTest {
         };
         walker.walk();
 
-        Assert.assertEquals(5, rowCoords.size());
+        Assert.assertEquals(13, rowCoords.size());
     }
 
 

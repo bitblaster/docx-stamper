@@ -1,13 +1,13 @@
 package io.reflectoring.docxstamper.util;
 
+import jakarta.xml.bind.JAXBElement;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.ContentAccessor;
-import org.docx4j.wml.Tbl;
-import org.docx4j.wml.Tc;
+import org.docx4j.wml.*;
 import io.reflectoring.docxstamper.api.coordinates.ParagraphCoordinates;
 import io.reflectoring.docxstamper.api.coordinates.TableCoordinates;
 import io.reflectoring.docxstamper.api.coordinates.TableRowCoordinates;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,11 +41,9 @@ public class ObjectDeleter {
 	/**
 	 * Get new index of element to be deleted, taking into account previously
 	 * deleted elements
-	 * 
+	 *
 	 * @param initialIndex
 	 *            initial index of the element to be deleted
-	 * @param deletedObjects
-	 *            list of indexes of already deleted elements
 	 * @return the index of the item to be removed
 	 */
 	private int getOffset(final int initialIndex) {
@@ -88,6 +86,36 @@ public class ObjectDeleter {
 
 	public void deleteTableRow(TableRowCoordinates tableRowCoordinates) {
 		Tbl table = tableRowCoordinates.getParentTableCoordinates().getTable();
+		Tr row = tableRowCoordinates.getRow();
+		// Before actually deleting the row, check if some cell is starting a vertical merge
+		// If so, deleting the row will also remove the merged content,
+		// so instead we "hide" the row forcing its height to zero
+		for (Object rawCol : row.getContent()) {
+			if (rawCol instanceof JAXBElement<?> jaxbCol && jaxbCol.getValue() instanceof Tc col) {
+				TcPr tcPr = col.getTcPr();
+				if (tcPr.getVMerge() != null && "restart".equals(tcPr.getVMerge().getVal())) {
+					// Search for an existing height definition on the row
+					List<JAXBElement<?>> trStyles = row.getTrPr().getCnfStyleOrDivIdOrGridBefore();
+					for (JAXBElement<?> trStyle : trStyles) {
+						if (trStyle.getValue() instanceof CTHeight trHeight) {
+							trHeight.setVal(BigInteger.ZERO);
+							trHeight.setHRule(STHeightRule.EXACT);
+							return;
+						}
+					}
+
+					// if not found, create a new height definition
+					ObjectFactory wmlObjectFactory = new ObjectFactory();
+					CTHeight trHeight = wmlObjectFactory.createCTHeight();
+					trHeight.setVal(BigInteger.ZERO);
+					trHeight.setHRule(STHeightRule.EXACT);
+					JAXBElement<org.docx4j.wml.CTHeight> heightWrapped = wmlObjectFactory.createCTTrPrBaseTrHeight(trHeight);
+					trStyles.add(heightWrapped);
+					return;
+				}
+			}
+		}
+
 		int index = tableRowCoordinates.getIndex();
 		Integer objectsDeletedFromTable = deletedObjectsPerParent.get(table);
 		if (objectsDeletedFromTable == null) {

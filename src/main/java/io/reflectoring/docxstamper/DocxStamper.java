@@ -73,10 +73,10 @@ public class DocxStamper<T> {
     commentProcessorRegistry = new CommentProcessorRegistry(placeholderReplacer);
     commentProcessorRegistry.setExpressionResolver(expressionResolver);
     commentProcessorRegistry.setFailOnInvalidExpression(config.isFailOnUnresolvedExpression());
+    commentProcessorRegistry.registerCommentProcessor(IDisplayIfProcessor.class, new DisplayIfProcessor());
     commentProcessorRegistry.registerCommentProcessor(IRepeatProcessor.class, new RepeatProcessor(typeResolverRegistry, expressionResolver));
     commentProcessorRegistry.registerCommentProcessor(IParagraphRepeatProcessor.class, new ParagraphRepeatProcessor(typeResolverRegistry, expressionResolver));
     commentProcessorRegistry.registerCommentProcessor(IRepeatDocPartProcessor.class, new RepeatDocPartProcessor(typeResolverRegistry, expressionResolver));
-    commentProcessorRegistry.registerCommentProcessor(IDisplayIfProcessor.class, new DisplayIfProcessor());
     commentProcessorRegistry.registerCommentProcessor(IReplaceWithProcessor.class,
             new ReplaceWithProcessor());
     for (Map.Entry<Class<?>, ICommentProcessor> entry : config.getCommentProcessors().entrySet()) {
